@@ -1,9 +1,12 @@
 # Exposing the Deception: Uncovering More Forgery Clues for Deepfake Detection
+
 ![](https://github.com/QingyuLiu/Exposing-the-Deception/blob/main/framework.png)
 This repo is the official implementation of “Exposing the Deception: Uncovering More Forgery Clues for Deepfake Detection”. Accepted by AAAI-2024.
 
 ## Installation
+
 Our code is implemented and evaluated on pytorch. The following packages are used by our code.
+
 - `torch==2.0.1`
 - `albumentations==1.3.1`
 - `opencv-python==4.8.1.78`
@@ -14,12 +17,14 @@ Our code is implemented and evaluated on pytorch. The following packages are use
 
 Our code is evaluated on `Python 3.8.11` and `CUDA 11.7`.
 
-
 ## Training
+
 ### Prepare Datasets
+
 - Prepare face forgery datasets: [FaceForensics++](https://github.com/ondyari/FaceForensics), [Celeb-DF-V1](https://github.com/yuezunli/celeb-deepfakeforensics), [Celeb-DF-V2](https://github.com/yuezunli/celeb-deepfakeforensics), [DFDC-Preview](https://ai.meta.com/datasets/dfdc/), [DFDC](https://www.kaggle.com/c/deepfake-detection-challenge/data)
-- Preprocess the video: extract frames from videos, and then extract facial images using [RetinaFace](https://github.com/biubug6/Pytorch_Retinaface). 
-To train or test the model, you should provide a dataset path and label txt, which need to have the following folder structure. 
+- Preprocess the video: extract frames from videos, and then extract facial images using [RetinaFace](https://github.com/biubug6/Pytorch_Retinaface).
+  To train or test the model, you should provide a dataset path and label txt, which need to have the following folder structure.
+
 ```Shell
 dataset
 |-- FF++ < dataset name >
@@ -35,8 +40,11 @@ dataset
 ```
 
 ### Train Models
+
 You should make `output` and `logs` folders to save files of the model and log before running the following command.
+
 ```
+python -m tensorboard.main --logdir=runs/train_model
 python training.py  --name                                      \
 
                     (arguments for training)
@@ -70,7 +78,9 @@ python training.py  --name                                      \
                     --save_model True                           \
                     --save_path output                          \
 ```
+
 The following is a description of some parameters in the configuration file:
+
 - `model`: the backbone type of LIB, which supports resnet, efficientnet, mobilenet.
 - `dataset`: is the dataset name, which corresponds to `dataset/{dataset_name}` path.
 - `lil_loss`, `gil_loss`: `True` is to use Local Information Loss or Gocal Information Loss proposed by our work.
@@ -78,8 +88,8 @@ The following is a description of some parameters in the configuration file:
 - `balance_loss_method`: is the method for determining $\alpha$ and $\beta$ in equation (13) of the paper, and supports auto and hyper. If it is hyper, `scales` is the setting of weights, which respectively represent the weights of classification loss, the local information loss, and the global information loss.
 - `num_LIBs`: is the number of Local Information Block.
 
-
 ## Citation
+
 ```
 @article{ba2024exposing,
   title={Exposing the Deception: Uncovering More Forgery Clues for Deepfake Detection},
