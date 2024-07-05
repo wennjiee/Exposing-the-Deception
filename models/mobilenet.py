@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class MobileNetV1(nn.Module):
-    def __init__(self, ch_in=3, n_classes=1000):
+    def __init__(self, ch_in=3, n_classes=10):
         super(MobileNetV1, self).__init__()
 
         def conv_bn(inp, oup, stride):
@@ -51,4 +51,4 @@ class MobileNetV1(nn.Module):
 
 if __name__=='__main__':
     # model check
-    model = MobileNetV1(ch_in=3, n_classes=1000)
+    model = MobileNetV1(ch_in=3, n_classes=10)
