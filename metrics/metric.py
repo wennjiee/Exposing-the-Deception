@@ -29,7 +29,7 @@ class Metric:
         raise NotImplemented
     def accumulate(self, values) -> Dict[str, Any]:
         raise NotImplemented
-
+    # values = [outputs, labels] = out['p_y_given_z'], y
     def accumulate_on_batch(self, values):
         current_metrics = self.accumulate(values)
         for key, value in current_metrics.items():
