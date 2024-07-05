@@ -5,3 +5,8 @@ runs/*
 *.txt
 *.pyc
 *.pth
+*.tar
+*.pdf
+*.csv
+*.png
+*.jpg
