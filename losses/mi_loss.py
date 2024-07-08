@@ -30,6 +30,7 @@ class loss_functions():
         elif mi_calculator == "w":
             self.mi_calculator = distance.SinkhornDistance(device=device).to(device)
         self.temperature =temperature
+    
     def criterion(self,out_dict,y):
 
         return_losses=[]
@@ -38,23 +39,23 @@ class loss_functions():
         p_y_given_f1_f2_f3_f4=out_dict['p_y_given_f_all']
         p_y_given_f1_fn_list=out_dict['p_y_given_f1_fn_list']
 
-        # CE loss
+        # CE loss 1. x_s = softmax()(x); 2. x_log = log(x_s); 3. NLLLoss(x_log, y) = CE loss
         loss_fn = nn.CrossEntropyLoss()
         ce_loss = loss_fn(out_dict['p_y_given_z'], y)
 
 
-        #Global Information Loss
+        # Global Information Loss
         if self.gil_loss:
-            ce_loss+=loss_fn(p_y_given_f1_f2_f3_f4, y)
+            ce_loss += loss_fn(p_y_given_f1_f2_f3_f4, y)
             global_mi_loss = self.mi_calculator(self.softmax(p_y_given_f1_f2_f3_f4.detach() / self.temperature).log(),
                                                 self.softmax(p_y_given_z / self.temperature))
 
         # # for visulization
         # try:
-        #     p_y_given_fi=out_dict['p_y_given_f_i']
-        #     model_size=len(p_y_given_fi)
+        #     p_y_given_fi = out_dict['p_y_given_f_i']
+        #     model_size = len(p_y_given_fi)
         #     for out_v in p_y_given_fi:
-        #         ce_loss = ce_loss + 1/model_size*loss_fn(out_v, y)
+        #         ce_loss = ce_loss + 1 / model_size*loss_fn(out_v, y)
         # except:
         #     print("no p_y_given_f_i")
 
@@ -78,16 +79,18 @@ class loss_functions():
                     ce_loss = ce_loss + loss_fn(out_v, y)
                 # ce_loss = ce_loss + 0.25 * loss_fn(p_y_given_f1_fn_list[i], y)
                 local_loss = torch.exp(-local_loss)
+        
         return_losses.append(ce_loss)
         if self.gil_loss:
             return_losses.append(global_mi_loss)
         if self.lil_loss:
             return_losses.append(local_loss)
         return return_losses
+    
     def balance_mult_loss(self,losses):
         if self.bml_method == 'auto':
             # Automatic Weighted Loss
-            loss =self.balance_loss(losses)
+            loss = self.balance_loss(losses)
 
         elif self.bml_method == 'hyper':
             # hyper-parameter
@@ -95,5 +98,5 @@ class loss_functions():
             for i, l in enumerate(losses):
                 loss = loss+l*self.scales[i]
         else:
-            loss=sum(losses)
+            loss = sum(losses)
         return loss
