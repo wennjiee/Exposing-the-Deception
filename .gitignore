@@ -10,3 +10,4 @@ runs/*
 *.csv
 *.png
 *.jpg
+.ipynb_checkpoints/*

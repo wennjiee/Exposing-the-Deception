@@ -59,7 +59,7 @@ parser.add_argument('--dataset', default="race", type=str, help="dataset txt pat
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-
+parser.add_argument("--data_path", default='../datasets/waitan24/phase1/trainset/*.jpg', type=str, help="path to inference file")
 args = parser.parse_args()
 
 class inference_model():
@@ -150,7 +150,7 @@ class inference_model():
             line.append(test_path[idx])
             if label_list[idx] != 'unk':
                 line.append('label=' + str(label_list[idx]))
-            line.append('pred=' + str(pred_list[idx]))
+            line.append(str(pred_list[idx]))
             lines.append(line)
         write_csv(f'./results18.csv', lines)
         

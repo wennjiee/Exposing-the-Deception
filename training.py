@@ -75,6 +75,7 @@ class train_and_test_model():
     
     def load_model(self,path):
         logging.info(f'Resuming training from {path}')
+        print(f'Resuming training from {path}')
         loaded_params = torch.load(f"{path}", map_location=torch.device(self.device))
                                    
         state_dict = loaded_params['state_dict']
@@ -275,6 +276,23 @@ class train_and_test_model():
                 lines.append(line)
             write_csv(f'./logs/test_{args.dataset}_reults.csv', lines)
 
+            # lines = []
+            # for idx in range(len(test_path)):
+            #     line = []
+            #     line.append(test_path[idx])
+            #     line.append('label=' + str(label_list[idx]))
+            #     line.append('pred=' + str(pred_list[idx]))
+            #     lines.append(line)
+            # write_csv(f'./logs/test_{args.dataset}_label_reults.csv', lines)
+            
+            # lines = [['img_name', 'pred']]
+            # _infer_prob = np.concatenate(infer_prob)
+            # for idx in range(len(test_path)):
+            #     line = []
+            #     line.append(test_path[idx].split('/')[-1])
+            #     line.append(str(_infer_prob[idx]))
+            #     lines.append(line)
+            # write_csv(f'./logs/test_{args.dataset}_prob_reults.csv', lines)
         log_info = f"Tested AUC: {metric}, ACC: {acc_socre}, Training CE loss: {np.mean(avg_ce_loss)}, "
         if self.args.gil_loss:
             log_info += f"global MI loss: {np.mean(avg_global_mi_loss)},"

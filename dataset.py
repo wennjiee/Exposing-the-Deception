@@ -281,7 +281,7 @@ class InferDataset():
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-        img_list = glob('../_Datasets/data/*.png')
+        img_list = glob(args.data_path)
         self.data['train'] = img_list
         self.data['val'] = img_list
         self.data['test'] = img_list
