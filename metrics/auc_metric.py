@@ -17,13 +17,12 @@ class AUCMetric(Metric):
         predicted = np.concatenate(values['prediction'])
         auc = roc_auc_score(list(_flatten(values['labels'])), predicted)
         return {'value': auc}
-
+    # values = [outputs, labels] = out['p_y_given_z'], y
     def accumulate(self, values):
         out = values[0].cpu().detach()
         labels = values[1]
-
         res = dict()
         res['labels'] = labels.cpu().detach().tolist()
-        res['prediction'] = softmax(np.array(out.data.tolist()), axis=1)[:,1]
+        res['prediction'] = softmax(np.array(out.data.tolist()), axis=1)[:,1] # 取all行，第1列
         return res
 
