@@ -1,44 +1,48 @@
 import torch
 import torch.nn as nn
-from models.resnet import resnet34
+from models.resnet import resnet34, resnet18
 from torch.nn import init
 from models.efficientnet import EfficientNet
 from models.mobilenet import MobileNetV1
 import logging
-class MI_Net(nn.Module):
-    def __init__(self, model='resnet34',num_regions=4,num_classes=2,freeze_fc=False,dropout=0.5)-> object:
-        super(MI_Net, self).__init__()
 
-        self.num_regions=num_regions
+class MI_Net(nn.Module):
+    def __init__(self, args, model='resnet34', num_regions=4, num_classes=2, freeze_fc=False, dropout=0.5)-> object:
+        super(MI_Net, self).__init__()
+        
+        num_classes = 2 if 'cifar' not in args.dataset else 10
+        self.num_regions = num_regions
         logging.info(f'Now has {num_regions} region models')
+        
         self.region_models = []
         for i in range(num_regions):
-            if model == 'resnet':
-                layer = resnet34(pretrained=True)
+            if model == 'resnet18':
+                layer = resnet18(pretrained=False)
+            elif model == 'resnet34':
+                layer = resnet34(pretrained=False)
             elif model == 'mobilenet':
                 layer = MobileNetV1()
             elif model == 'efficientnet':
-                layer = EfficientNet(pretrained=True)
+                layer = EfficientNet(pretrained=False)
             else:
                 logging.error("please choose the tpye of backbone in Local Information Block.")
             layer_name = 'region_model{}'.format(i + 1)
             self.add_module(layer_name, layer)
             self.region_models.append(layer_name)
 
-        in_size = get_output_size(getattr(self, 'region_model1'))
+        in_size = get_output_size(getattr(self, 'region_model1'), args) # getattr(,) = net(input).size(1)
+        
         self.local_linears = []
         for i in range(num_regions):
-            local_linear=nn.Linear(in_size * (num_regions - 1), num_classes)
+            local_linear = nn.Linear(in_size * (num_regions - 1), num_classes)
             layer_name = 'local_linear{}'.format(i + 1)
             self.add_module(layer_name, local_linear)
             self.local_linears.append(layer_name)
-        #
 
         self.bottleneck = ChannelCompress(in_ch=in_size*num_regions, out_ch=in_size)
-        # self.global_model=ResNet_18()
+        # self.global_model = ResNet_18()
 
         self.baseline_linear = nn.Linear(in_size*num_regions, num_classes)  # *(num_regions+1)
-
         self.linear = nn.Sequential(
             nn.Dropout(p=dropout),
             nn.Linear(in_size, num_classes)
@@ -46,9 +50,10 @@ class MI_Net(nn.Module):
         # self.linear = nn.Linear(in_size, num_classes)
         if freeze_fc:
             freeze(self.linear)
-
+    # out = self.net(data)
     def forward(self, x):
-        features=[]
+        
+        features = []
         for i, layer_name in enumerate(self.region_models):
             layer = getattr(self, layer_name)
             feature = layer(x)
@@ -56,20 +61,20 @@ class MI_Net(nn.Module):
 
         feature = torch.cat(features, dim=1)
 
-        p_y_given_f1_f2_f3_f4=self.baseline_linear(feature)
+        p_y_given_f1_f2_f3_f4 = self.baseline_linear(feature)
 
         global_feature_z = self.bottleneck(feature) # Fusion layer
 
         p_y_given_z = self.linear(global_feature_z)
 
-        p_y_given_f1_fn_list=[]
+        p_y_given_f1_fn_list = []
 
         for i, layer_name in enumerate(self.local_linears):
             local_linear = getattr(self, layer_name)
-            tmp=features.copy()
+            tmp = features.copy()
             tmp.pop(i)
             f1_fn_except_i = torch.cat(tmp, dim=1)
-            p_y_given_f1_fn_except_i=local_linear(f1_fn_except_i)
+            p_y_given_f1_fn_except_i = local_linear(f1_fn_except_i)
             p_y_given_f1_fn_list.append(p_y_given_f1_fn_except_i)
 
         return {'p_y_given_z': p_y_given_z, 'p_y_given_f_all': p_y_given_f1_f2_f3_f4,
@@ -116,7 +121,7 @@ class ChannelCompress(nn.Module):
         add_block += [nn.Linear(500, out_ch)]
 
         # Extra BN layer, need to be removed
-        #add_block += [nn.BatchNorm1d(out_ch)]
+        # add_block += [nn.BatchNorm1d(out_ch)]
 
         add_block = nn.Sequential(*add_block)
         # add_block.apply(weights_init_kaiming)
@@ -126,8 +131,13 @@ class ChannelCompress(nn.Module):
         x = self.model(x)
         return x
 
-def get_output_size(net):
-    input = torch.randn(1,3,224, 224)
+def get_output_size(net, args):
+    _size = -1
+    if 'cifar' not in args.dataset:
+        _size = 224
+    else:
+        _size = 32
+    input = torch.randn(1, 3, _size, _size)
     # torch.Size([250, 3, 224, 224])
-    output=net(input)
+    output = net(input)
     return output.size(1)
