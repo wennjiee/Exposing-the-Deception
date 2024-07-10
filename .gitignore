@@ -11,3 +11,4 @@ runs/*
 *.png
 *.jpg
 .ipynb_checkpoints/*
+*.zip
