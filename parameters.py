@@ -4,7 +4,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # general arguments
-    parser.add_argument("--name", default="waitan", type=str, help="Specify name of the model")
+    parser.add_argument("--name", default="deepfake", type=str, help="Specify name of the model")
     parser.add_argument("--gpu_num", default="0", type=str, help="gpu number")
                         
 
@@ -13,9 +13,9 @@ def parse_args():
     parser.add_argument("--epoch", default=10, type=int, help="epoch of training")
     parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
-    parser.add_argument("--bs", default=128, type=int, help="batch size of training")
-    parser.add_argument("--test_bs", default=128, type=int, help="batch size of training")
-    parser.add_argument("--num_workers", default=4, type=int, help="num workers")
+    parser.add_argument("--bs", default=32, type=int, help="batch size of training")
+    parser.add_argument("--test_bs", default=32, type=int, help="batch size of training")
+    parser.add_argument("--num_workers", default=0, type=int, help="num workers")
 
     # arguments for loss
     parser.add_argument("--lil_loss", default=True, type=bool, help="if local information loss")
@@ -28,12 +28,12 @@ def parse_args():
     # model parameters
     parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
     parser.add_argument("--resume_model",
-                        default="output/train_waitan/model_epoch_8.pth", # output/train_celeb_df_v2/model_best. output/train_race/model_best.pth
+                        default="", # output/train_celeb_df_v2/model_best. output/train_race/model_best.pth
                         type=str,
                         help="Path of resume model")
 
     # arguments for test
-    parser.add_argument("--test", default=True, type=bool,help="Test or not")
+    parser.add_argument("--test", default=False, type=bool,help="Test or not")
 
     # save models
     parser.add_argument("--save_model", default=True, type=bool, help="whether save models or not")
@@ -41,7 +41,7 @@ def parse_args():
     
     # dataset
     parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-    parser.add_argument('--dataset', default="waitan", type=str, help="dataset txt path")
+    parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt path")
     # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
     parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
     parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
