@@ -317,6 +317,7 @@ def unNormalize(tensor,mean,std):
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
     mode = 'train' if not args.test else 'test'
     if args.name and mode == 'train':
         format_current = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
