@@ -64,11 +64,60 @@ class ReadDataset():
             self.init_cifar_10()
         elif 'waitan' in args.dataset:
             self.init_waitan()
+        elif 'deepfake' in args.dataset:
+            self.init_deepfake_sets()
         else:
             self.init_datasets()
             # self.read_txt(oversample=oversample)
         logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train'])-sum(self.labels['train'])}")
     
+    def init_deepfake_sets(self):
+        real_f_list = glob('D:/_Datasets/upload/real/*')
+        fake_f_list = glob('D:/_Datasets/upload/fake/*')
+        
+        real_list = []
+        for item in real_f_list:
+            _list = glob(item + '/*.jpg') + glob(item + '/*.png')
+            if 'wanghong' in item:
+                random.shuffle(_list)
+                _list = _list[0: 20000]
+            real_list.append(_list)
+        real_list = [y for x in real_list for y in x]
+
+        fake_list = []
+        for item in fake_f_list:
+            _list = glob(item + '/*.jpg') + glob(item + '/*.png')
+            fake_list.append(_list)
+        fake_list = [y for x in fake_list for y in x]
+        
+        if len(real_list) <= len(fake_list):
+            fake_list = fake_list[0: len(real_list)]
+        else:
+            real_list = real_list[0: len(fake_list)]
+        
+        random.shuffle(real_list)
+        random.shuffle(fake_list)
+        real_tgt_list = [1] * len(real_list)
+        fake_tgt_list = [0] * len(fake_list)
+        print('total_real_imgs =', len(real_list))
+        print('total_fake_imgs =', len(fake_list))
+        ratio = 0.8
+        train_real_idx = int(ratio*len(real_list))
+        train_fake_idx = int(ratio*len(fake_list))
+        print(f'train_real_len = {train_real_idx}')
+        print(f'train_fake_len = {train_fake_idx}')
+        val_real_idx = int((len(real_list) - train_real_idx) / 2)
+        val_fake_idx = int((len(fake_list) - train_fake_idx) / 2)
+        
+        # train = 0.8 * all, val == test = 0.2 * all
+        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx]
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:]
+        self.data['test'] = self.data['val']
+                                      
+        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx]
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]
+        self.labels['test'] = self.labels['val']
+        
     def init_waitan(self):
         with open("D:/_Datasets/waitan2024_phase1/trainset_label.txt", "r") as f:
             lines = f.readlines()
