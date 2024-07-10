@@ -72,8 +72,8 @@ class ReadDataset():
         logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train'])-sum(self.labels['train'])}")
     
     def init_deepfake_sets(self):
-        real_f_list = glob('D:/_Datasets/upload/real/*')
-        fake_f_list = glob('D:/_Datasets/upload/fake/*')
+        real_f_list = glob('./datasets/real/*')
+        fake_f_list = glob('./datasets/fake/*')
         
         real_list = []
         for item in real_f_list:
