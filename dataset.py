@@ -70,21 +70,21 @@ class ReadDataset():
         logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train'])-sum(self.labels['train'])}")
     
     def init_waitan(self):
-        with open("D:/_Datasets/waitan2024_phase1/trainset_label.txt", "r") as f:
+        with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
             lines = f.readlines()
             train_data = []
             train_label = []
             for line in lines[1:]:
                 line = line.strip('\n').split(',')
-                train_data.append('D:/_Datasets/waitan2024_phase1/trainset/' + line[0])
+                train_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
                 train_label.append(int(line[1]))
-        with open("D:/_Datasets/waitan2024_phase1/valset_label.txt", "r") as f:
+        with open("./datasets/waitan24/phase1/valset_label.txt", "r") as f:
             lines = f.readlines()
             val_data = []
             val_label = []
             for line in lines[1:]:
                 line = line.strip('\n').split(',')
-                val_data.append('D:/_Datasets/waitan2024_phase1/valset/' + line[0])
+                val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
                 val_label.append(int(line[1]))
         self.data['train'] = train_data
         self.labels['train'] = train_label
