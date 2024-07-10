@@ -13,9 +13,9 @@ def parse_args():
     parser.add_argument("--epoch", default=10, type=int, help="epoch of training")
     parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
-    parser.add_argument("--bs", default=32, type=int, help="batch size of training")
-    parser.add_argument("--test_bs", default=32, type=int, help="batch size of training")
-    parser.add_argument("--num_workers", default=0, type=int, help="num workers")
+    parser.add_argument("--bs", default=128, type=int, help="batch size of training")
+    parser.add_argument("--test_bs", default=128, type=int, help="batch size of training")
+    parser.add_argument("--num_workers", default=6, type=int, help="num workers")
 
     # arguments for loss
     parser.add_argument("--lil_loss", default=True, type=bool, help="if local information loss")
