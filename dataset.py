@@ -82,33 +82,29 @@ class ReadDataset():
                 random.shuffle(_list)
                 _list = _list[0: 20000]
             real_list.append(_list)
-        real_list = [y for x in real_list for y in x]
+        real_list = [y for x in real_list for y in x] # about 42906
 
         fake_list = []
         for item in fake_f_list:
             _list = glob(item + '/*.jpg') + glob(item + '/*.png')
             fake_list.append(_list)
-        fake_list = [y for x in fake_list for y in x]
-        
+        fake_list = [y for x in fake_list for y in x] # about 53396
+
+        random.shuffle(real_list)
+        random.shuffle(fake_list)
         if len(real_list) <= len(fake_list):
             fake_list = fake_list[0: len(real_list)]
         else:
             real_list = real_list[0: len(fake_list)]
-        
-        random.shuffle(real_list)
-        random.shuffle(fake_list)
-        real_tgt_list = [1] * len(real_list)
-        fake_tgt_list = [0] * len(fake_list)
+        real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
+        fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
         print('total_real_imgs =', len(real_list))
         print('total_fake_imgs =', len(fake_list))
+        
         ratio = 0.8
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
-        print(f'train_real_len = {train_real_idx}')
-        print(f'train_fake_len = {train_fake_idx}')
-        val_real_idx = int((len(real_list) - train_real_idx) / 2)
-        val_fake_idx = int((len(fake_list) - train_fake_idx) / 2)
-        
+
         # train = 0.8 * all, val == test = 0.2 * all
         self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx]
         self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:]
@@ -117,7 +113,12 @@ class ReadDataset():
         self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx]
         self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]
         self.labels['test'] = self.labels['val']
-        
+        print(f'train_real_len = {len(real_list[0: train_real_idx])}')
+        print(f'train_fake_len = {len(fake_list[0: train_fake_idx])}')
+        print(f'test_real_len = {len(real_list[train_real_idx:])}')
+        print(f'test_fake_len = {len(fake_list[train_fake_idx:])}')
+        print('Data loaded!')
+    
     def init_waitan(self):
         with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
             lines = f.readlines()
@@ -330,7 +331,9 @@ class InferDataset():
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-        img_list = glob(args.data_path)
+        path_jpg = args.data_path + '/*.jpg'
+        path_png = args.data_path + '/*.png'
+        img_list = glob(path_jpg) + glob(path_png)
         self.data['train'] = img_list
         self.data['val'] = img_list
         self.data['test'] = img_list
