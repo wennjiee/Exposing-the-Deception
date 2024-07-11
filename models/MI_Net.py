@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.resnet import resnet34, resnet18
+from models.resnet import resnet34, resnet18, resnet50
 from torch.nn import init
 from models.efficientnet import EfficientNet
 from models.mobilenet import MobileNetV1
@@ -20,6 +20,8 @@ class MI_Net(nn.Module):
                 layer = resnet18(pretrained=False)
             elif model == 'resnet34':
                 layer = resnet34(pretrained=False)
+            elif model == 'resnet50':
+                layer = resnet50(pretrained=False)
             elif model == 'mobilenet':
                 layer = MobileNetV1()
             elif model == 'efficientnet':
