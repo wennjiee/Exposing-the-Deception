@@ -316,6 +316,8 @@ def unNormalize(tensor,mean,std):
     return tensor
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.set_start_method('spawn')
     args = parse_args()
     print(args)
     mode = 'train' if not args.test else 'test'
