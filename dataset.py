@@ -14,6 +14,7 @@ from glob import glob
 from os import listdir
 from os.path import join
 import random
+from  RetinaFace.Retain_Face import Retain_Face
 class ReadDataset():
     """
         initialize once and can be reused as train/test/validation set
@@ -100,24 +101,51 @@ class ReadDataset():
         fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
         print('total_real_imgs =', len(real_list))
         print('total_fake_imgs =', len(fake_list))
-        
+        kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv = self.load_kaggle_datasets()
         ratio = 0.8
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
 
         # train = 0.8 * all, val == test = 0.2 * all
-        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx]
-        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:]
+        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + kaggle_train_data
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + kaggle_val_data
         self.data['test'] = self.data['val']
                                       
-        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx]
-        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]
+        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + kaggle_train_label_inv
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + kaggle_val_label_inv
         self.labels['test'] = self.labels['val']
+
         print(f'train_real_len = {len(real_list[0: train_real_idx])}')
         print(f'train_fake_len = {len(fake_list[0: train_fake_idx])}')
         print(f'test_real_len = {len(real_list[train_real_idx:])}')
         print(f'test_fake_len = {len(fake_list[train_fake_idx:])}')
         print('Data loaded!')
+    
+    def load_kaggle_datasets(self):
+        # load kaggle datasets
+        with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
+            lines = f.readlines()
+            kaggle_train_data = []
+            kaggle_train_label = []
+            for line in lines[1:]:
+                line = line.strip('\n').split(',')
+                kaggle_train_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
+                kaggle_train_label.append(int(line[1]))
+        kaggle_train_data = kaggle_train_data[0: 12000]
+        kaggle_train_label = kaggle_train_label[0: 12000]
+        kaggle_train_label_inv = [1 if item == 0 else 0 for item in kaggle_train_label]
+        with open("./datasets/waitan24/phase1/valset_label.txt", "r") as f:
+            lines = f.readlines()
+            kaggle_val_data = []
+            kaggle_val_label = []
+            for line in lines[1:]:
+                line = line.strip('\n').split(',')
+                kaggle_val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
+                kaggle_val_label.append(int(line[1]))
+        kaggle_val_data = kaggle_val_data[0:4000]
+        kaggle_val_label = kaggle_val_label[0:4000]
+        kaggle_val_label_inv = [1 if item == 0 else 0 for item in kaggle_val_label]
+        return kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv
     
     def init_waitan(self):
         with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
@@ -331,9 +359,7 @@ class InferDataset():
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-        path_jpg = args.data_path + '/*.jpg'
-        path_png = args.data_path + '/*.png'
-        img_list = glob(path_jpg) + glob(path_png)
+        img_list = glob(args.data_path + '/*')
         self.data['train'] = img_list
         self.data['val'] = img_list
         self.data['test'] = img_list
@@ -361,6 +387,7 @@ class MyDataset(Dataset):
         self.aug = self.create_train_aug()
         self.transform = self.transform_all()
         self.test = test
+        self.retainFace = Retain_Face()
         # self.log_info = {'path':[], 'label':[]}
 
     def create_train_aug(self):
@@ -383,12 +410,13 @@ class MyDataset(Dataset):
         if 'cifar' not in self.dataset_name:
             # img = Image.open(self.data[idx])
             img = cv2.imread(self.data[idx], cv2.IMREAD_COLOR) # HxWx3
+            # with torch.no_grad():
+            #     img = self.retainFace.generateBooxImg(img)
             data = self.transform(image=img) # H*W*3
             img = data["image"]
             if not self.test:
                 data = self.aug(image=img)
                 img = data["image"]
-
             img = img_to_tensor(img,self.normalize) # 3*H*W
             # if self.test:
             #     self.log_info['path'].append(self.data[idx])
