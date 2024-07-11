@@ -19,17 +19,15 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # general arguments
-parser.add_argument("--name", default="race", type=str, help="Specify name of the model")
 parser.add_argument("--gpu_num", default="0", type=str, help="gpu number")
                     
-# arguments for train
+# arguments for train or test
 parser.add_argument('--model', default="resnet34", type=str, help="choose backbone model")
 parser.add_argument("--epoch", default=20, type=int, help="epoch of training")
 parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
 parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
-parser.add_argument("--bs", default=32, type=int, help="batch size of training")
-parser.add_argument("--test_bs", default=32, type=int, help="batch size of training")
-parser.add_argument("--num_workers", default=0, type=int, help="num workers")
+parser.add_argument("--test_bs", default=256, type=int, help="batch size of training")
+parser.add_argument("--num_workers", default=8, type=int, help="num workers")
 
 # arguments for loss
 parser.add_argument("--lil_loss", default=True, type=bool, help="if local information loss")
@@ -42,24 +40,20 @@ parser.add_argument('--balance_loss_method', default='auto', type=str, help="bal
 # model parameters
 parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
 parser.add_argument("--resume_model",
-                    default="output/train_celeb_df_v2/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
+                    default="output/train_deepfake/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
                     type=str,
                     help="Path of resume model")
 
 # arguments for test
 parser.add_argument("--test", default=True, type=bool,help="Test or not")
 
-# save models
-parser.add_argument("--save_model", default=True, type=bool, help="whether save models or not")
-parser.add_argument("--save_path", default="output", type=str, help="Path of test file, work when test is true")
-
 # dataset
 parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-parser.add_argument('--dataset', default="race", type=str, help="dataset txt path")
+parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt path")
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-parser.add_argument("--data_path", default='../datasets/waitan24/phase1/trainset/*.jpg', type=str, help="path to inference file")
+parser.add_argument("--data_path", default='./datasets/fake/fake-seeprettyface_wanghong-10000', type=str, help="path to inference file")
 args = parser.parse_args()
 
 class inference_model():
@@ -152,8 +146,8 @@ class inference_model():
                 line.append('label=' + str(label_list[idx]))
             line.append(str(pred_list[idx]))
             lines.append(line)
-        write_csv(f'./results18.csv', lines)
-        
+        postfix = args.data_path.split('/')[-1]
+        write_csv(f'./results18_{postfix}.csv', lines)
         print('Finished Inference')
 
 if __name__ == "__main__":
