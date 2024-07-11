@@ -12,3 +12,6 @@ runs/*
 *.jpg
 .ipynb_checkpoints/*
 *.zip
+RetinaFace/*
+datasets/*
+*.jpeg
