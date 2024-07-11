@@ -26,7 +26,7 @@ parser.add_argument('--model', default="resnet34", type=str, help="choose backbo
 parser.add_argument("--epoch", default=20, type=int, help="epoch of training")
 parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
 parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
-parser.add_argument("--test_bs", default=256, type=int, help="batch size of training")
+parser.add_argument("--test_bs", default=128, type=int, help="batch size of training")
 parser.add_argument("--num_workers", default=8, type=int, help="num workers")
 
 # arguments for loss
@@ -53,7 +53,7 @@ parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-parser.add_argument("--data_path", default='./datasets/fake/fake-seeprettyface_wanghong-10000', type=str, help="path to inference file")
+parser.add_argument("--data_path", default='./datasets/half_body', type=str, help="path to inference file")
 args = parser.parse_args()
 
 class inference_model():
@@ -151,6 +151,8 @@ class inference_model():
         print('Finished Inference')
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.set_start_method('spawn')
 
     model = inference_model(args)
     
