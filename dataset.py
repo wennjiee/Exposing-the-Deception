@@ -371,7 +371,7 @@ class InferDataset():
 class MyDataset(Dataset):
 
     def __init__(self,
-                 dataset_name,
+                 args,
                  data,
                  label,
                  size=224,
@@ -379,7 +379,7 @@ class MyDataset(Dataset):
                             "std": [0.229, 0.224, 0.225]},
                  test=False):
         super().__init__()
-        self.dataset_name = dataset_name
+        self.args = args
         self.size = size
         self.data = data
         self.label = label
@@ -387,7 +387,8 @@ class MyDataset(Dataset):
         self.aug = self.create_train_aug()
         self.transform = self.transform_all()
         self.test = test
-        self.retainFace = Retain_Face()
+        if self.args.extract_face:
+            self.retainFace = Retain_Face()
         # self.log_info = {'path':[], 'label':[]}
 
     def create_train_aug(self):
@@ -407,20 +408,18 @@ class MyDataset(Dataset):
         return Resize(p=1, height=self.size, width=self.size)
     
     def __getitem__(self, idx):
-        if 'cifar' not in self.dataset_name:
+        if 'cifar' not in self.args.dataset:
             # img = Image.open(self.data[idx])
             img = cv2.imread(self.data[idx], cv2.IMREAD_COLOR) # HxWx3
-            # with torch.no_grad():
-            #     img = self.retainFace.generateBooxImg(img)
+            if self.args.extract_face:
+                with torch.no_grad():
+                    img = self.retainFace.generateBooxImg(img)
             data = self.transform(image=img) # H*W*3
             img = data["image"]
             if not self.test:
                 data = self.aug(image=img)
                 img = data["image"]
             img = img_to_tensor(img,self.normalize) # 3*H*W
-            # if self.test:
-            #     self.log_info['path'].append(self.data[idx])
-            #     self.log_info['label'].append(self.label[idx])
             return img, self.label[idx] # 3*H_*W_=224
         else:
             img = self.data[idx]
