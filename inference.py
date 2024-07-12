@@ -54,6 +54,8 @@ parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
 parser.add_argument("--data_path", default='./datasets/half_body', type=str, help="path to inference file")
+parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
+
 args = parser.parse_args()
 
 class inference_model():
@@ -67,7 +69,7 @@ class inference_model():
         self.net = MI_Net(args=args, model=self.args.model, num_regions=self.args.num_LIBs, num_classes=2)
         self.device_ids = list(map(int, args.gpu_num.split(',')))
         self.dataset = InferDataset(args)
-        self.test_dataset = MyDataset(args.dataset, self.dataset.data['test'], self.dataset.labels['test'], size=args.size , test=True)
+        self.test_dataset = MyDataset(args, self.dataset.data['test'], self.dataset.labels['test'], size=args.size , test=True)
         self.device = torch.device("cuda", self.device_ids[0])
         self.test_loader = DataLoader(self.test_dataset, shuffle=False, batch_size=args.test_bs, num_workers=args.num_workers)              
         self.loss_function = loss_functions(method='mi',
@@ -151,12 +153,10 @@ class inference_model():
         print('Finished Inference')
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method('spawn')
-
-    model = inference_model(args)
-    
+    if args.extract_face:
+        import multiprocessing
+        multiprocessing.set_start_method('spawn')
+    model = inference_model(args) 
+    print(args)
     print('Starting Testing')
-    print('resume_model:', args.resume_model)
-    print('datasets:', args.dataset)
     model.test(model.net, 0, val=False)
