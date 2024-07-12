@@ -1,4 +1,3 @@
-import shutil
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
@@ -316,10 +315,11 @@ def unNormalize(tensor,mean,std):
     return tensor
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method('spawn')
     args = parse_args()
     print(args)
+    if args.extract_face:
+        import multiprocessing
+        multiprocessing.set_start_method('spawn')
     mode = 'train' if not args.test else 'test'
     if args.name and mode == 'train':
         format_current = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
