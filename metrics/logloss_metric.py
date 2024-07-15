@@ -3,7 +3,7 @@ from metrics.metric import Metric
 from sklearn.metrics import log_loss
 from scipy.special import softmax
 import numpy as np
-from tkinter import _flatten
+# from tkinter import _flatten
 class LOGLOSSMetric(Metric):
 
     def __init__(self, top_k=(1,)):
@@ -14,7 +14,9 @@ class LOGLOSSMetric(Metric):
     def compute_metric(self, values):
         """Computes the precision@k for the specified values of k"""
         predicted = np.concatenate(values['prediction'])
-        logloss=log_loss(list(_flatten(values['labels'])),predicted)
+        _list = [y for x in values['labels'] for y in x]
+        logloss = log_loss(_list, predicted)
+        # logloss=log_loss(list(_flatten(values['labels'])),predicted)
         return {'value': logloss}
 
     def accumulate(self, values):

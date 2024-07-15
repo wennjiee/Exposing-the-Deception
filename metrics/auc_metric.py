@@ -3,7 +3,7 @@ from metrics.metric import Metric
 from sklearn.metrics import roc_auc_score
 import numpy as np
 from scipy.special import softmax
-from tkinter import _flatten
+# from tkinter import _flatten
 # from torch_metrics import AUC
 class AUCMetric(Metric):
 
@@ -15,7 +15,9 @@ class AUCMetric(Metric):
     def compute_metric(self, values):
         """Computes the precision@k for the specified values of k"""
         predicted = np.concatenate(values['prediction'])
-        auc = roc_auc_score(list(_flatten(values['labels'])), predicted)
+        _list = [y for x in values['labels'] for y in x]
+        auc = roc_auc_score(_list, predicted)
+        # auc = roc_auc_score(list(_flatten(values['labels'])), predicted)
         return {'value': auc}
     # values = [outputs, labels] = out['p_y_given_z'], y
     def accumulate(self, values):

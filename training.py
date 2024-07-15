@@ -17,7 +17,6 @@ import warnings
 from csv_example import write_csv
 from sklearn.metrics import roc_auc_score
 from scipy.special import softmax
-from tkinter import _flatten
 import random
 random.seed(2024)
 warnings.simplefilter("ignore", UserWarning)
@@ -183,6 +182,7 @@ class train_and_test_model():
                     logging.info(log_info)
                     # maybe something strange occur
                     # self.plt_tb.write_tensorboard((epoch-1)*total_iterators + i, tb_writer=self.plt_tb.tb_writer, tb_prefix=f'Test_False')
+                # self.plt_tb.write_tensorboard(epoch, tb_writer=self.plt_tb.tb_writer, tb_prefix=f'Metrics in Training')  
                 pbar.update(1)
             
             pbar.close()
