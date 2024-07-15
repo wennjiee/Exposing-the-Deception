@@ -78,7 +78,7 @@ class ReadDataset():
         
         real_list = []
         for item in real_f_list:
-            _list = glob(item + '/*.jpg') + glob(item + '/*.png')
+            _list = glob(item + '/*')
             if 'wanghong' in item:
                 random.shuffle(_list)
                 _list = _list[0: 20000]
@@ -87,7 +87,7 @@ class ReadDataset():
 
         fake_list = []
         for item in fake_f_list:
-            _list = glob(item + '/*.jpg') + glob(item + '/*.png')
+            _list = glob(item + '/*')
             fake_list.append(_list)
         fake_list = [y for x in fake_list for y in x] # about 53396
 
@@ -99,40 +99,58 @@ class ReadDataset():
             real_list = real_list[0: len(fake_list)]
         real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
         fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
-        print('total_real_imgs =', len(real_list))
-        print('total_fake_imgs =', len(fake_list))
+        # print('total_real_imgs =', len(real_list))
+        # print('total_fake_imgs =', len(fake_list))
         kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv = self.load_kaggle_datasets()
+        dfdc_train_data, dfdc_train_label, dfdc_val_data, dfdc_val_label = self.load_dfdc_datasets()
+        celeb_train_data, celeb_train_label, celeb_val_data, celeb_val_label = self.load_celeb_datasets()
+        # ff_train_data, ff_train_label, ff_val_data, ff_val_label = self.load_ff_datasets()
         ratio = 0.8
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
 
         # train = 0.8 * all, val == test = 0.2 * all
-        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + kaggle_train_data
-        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + kaggle_val_data
+        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + kaggle_train_data + \
+            dfdc_train_data + celeb_train_data# + ff_train_data
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:]  + kaggle_val_data + celeb_val_data + dfdc_val_data  # + ff_val_data 
+            
         self.data['test'] = self.data['val']
                                       
-        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + kaggle_train_label_inv
-        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + kaggle_val_label_inv
+        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + kaggle_train_label_inv + \
+            dfdc_train_label + celeb_train_label# + ff_train_label
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]  + kaggle_val_label_inv + celeb_val_label + dfdc_val_label # + ff_val_label 
+            
         self.labels['test'] = self.labels['val']
+        print('train_len =', len(self.data['train']))
+        print('test_len =', len(self.data['test']))
+        # print(f'train_len = {len(self.data['train'])}')
+        # print(f'test_len = {len(self.data['test'])}')
 
-        print(f'train_real_len = {len(real_list[0: train_real_idx])}')
-        print(f'train_fake_len = {len(fake_list[0: train_fake_idx])}')
-        print(f'test_real_len = {len(real_list[train_real_idx:])}')
-        print(f'test_fake_len = {len(fake_list[train_fake_idx:])}')
+        # print(f'train_real_len = {len(real_list[0: train_real_idx])}')
+        # print(f'train_fake_len = {len(fake_list[0: train_fake_idx])}')
+        # print(f'test_real_len = {len(real_list[train_real_idx:])}')
+        # print(f'test_fake_len = {len(fake_list[train_fake_idx:])}')
         print('Data loaded!')
     
     def load_kaggle_datasets(self):
         # load kaggle datasets
         with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
             lines = f.readlines()
-            kaggle_train_data = []
-            kaggle_train_label = []
+            kaggle_train_real_data = []
+            kaggle_train_fake_data = []
+            kaggle_train_real_label = []
+            kaggle_train_fake_label = []
             for line in lines[1:]:
                 line = line.strip('\n').split(',')
-                kaggle_train_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
-                kaggle_train_label.append(int(line[1]))
-        kaggle_train_data = kaggle_train_data[0: 12000]
-        kaggle_train_label = kaggle_train_label[0: 12000]
+                flag = int(line[-1])
+                if flag == 1:
+                    kaggle_train_fake_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
+                    kaggle_train_fake_label.append(1)
+                else:
+                    kaggle_train_real_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
+                    kaggle_train_real_label.append(0)
+        kaggle_train_data = kaggle_train_real_data[0: 6000] + kaggle_train_fake_data[0: 6000]
+        kaggle_train_label = kaggle_train_real_label[0: 6000] + kaggle_train_fake_label[0: 6000]
         kaggle_train_label_inv = [1 if item == 0 else 0 for item in kaggle_train_label]
         with open("./datasets/waitan24/phase1/valset_label.txt", "r") as f:
             lines = f.readlines()
@@ -142,10 +160,58 @@ class ReadDataset():
                 line = line.strip('\n').split(',')
                 kaggle_val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
                 kaggle_val_label.append(int(line[1]))
-        kaggle_val_data = kaggle_val_data[0:4000]
-        kaggle_val_label = kaggle_val_label[0:4000]
+        kaggle_val_data = kaggle_val_data[0: 4000]
+        kaggle_val_label = kaggle_val_label[0: 4000]
         kaggle_val_label_inv = [1 if item == 0 else 0 for item in kaggle_val_label]
         return kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv
+    
+    def load_dfdc_datasets(self):
+        # real_list = glob('./datasets/real-dfdc/*')
+        # fake_list = glob('./datasets/fake-dfdc/*')
+        # random.shuffle(real_list)
+        # random.shuffle(fake_list)
+        # real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
+        # fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
+        # dfdc_train_data = real_list[0: 8000] + fake_list[0: 8000]
+        # dfdc_train_label = real_tgt_list[0: 8000] + fake_tgt_list[0: 8000]
+        # dfdc_val_data = real_list[8000: ] + fake_list[8000: ]
+        # dfdc_val_label = real_tgt_list[8000: ] + fake_tgt_list[8000: ]
+        # return dfdc_train_data, dfdc_train_label, dfdc_val_data, dfdc_val_label
+        
+        fake_list = glob('./datasets/fake-dfdc/*')
+        random.shuffle(fake_list)
+        fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
+        dfdc_train_data = fake_list[0: 8000]
+        dfdc_train_label = fake_tgt_list[0: 8000]
+        dfdc_val_data = fake_list[8000: ]
+        dfdc_val_label = fake_tgt_list[8000: ]
+        return dfdc_train_data, dfdc_train_label, dfdc_val_data, dfdc_val_label
+    
+    def load_celeb_datasets(self):
+        real_list = glob('./datasets/real-celeb/*')
+        fake_list = glob('./datasets/fake-celeb/*')
+        random.shuffle(real_list)
+        random.shuffle(fake_list)
+        real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
+        fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
+        celeb_train_data = real_list[0: 4000] + fake_list[0: 4000]
+        celeb_train_label = real_tgt_list[0: 4000] + fake_tgt_list[0: 4000]
+        celeb_val_data = real_list[4000: ] + fake_list[4000: ]
+        celeb_val_label = real_tgt_list[4000: ] + fake_tgt_list[4000: ]
+        return celeb_train_data, celeb_train_label, celeb_val_data, celeb_val_label
+    
+    def load_ff_datasets(self):
+        real_list = glob('./datasets/real-ff/*')
+        fake_list = glob('./datasets/fake-ff/*')
+        random.shuffle(real_list)
+        random.shuffle(fake_list)
+        real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
+        fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
+        ff_train_data = real_list[0: 4000] + fake_list[0: 4000]
+        ff_train_label = real_tgt_list[0: 4000] + fake_tgt_list[0: 4000]
+        ff_val_data = real_list[4000: ] + fake_list[4000: ]
+        ff_val_label = real_tgt_list[4000: ] + fake_tgt_list[4000: ]
+        return ff_train_data, ff_train_label, ff_val_data, ff_val_label
     
     def init_waitan(self):
         with open("./datasets/waitan24/phase1/trainset_label.txt", "r") as f:
