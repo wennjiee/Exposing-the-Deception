@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gpu_num", default="0", type=str, help="gpu number")
                     
 # arguments for train or test
-parser.add_argument('--model', default="resnet34", type=str, help="choose backbone model")
+parser.add_argument('--model', default="SFIConv", type=str, help="choose backbone model")
 parser.add_argument("--epoch", default=20, type=int, help="epoch of training")
 parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
 parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
@@ -40,7 +40,7 @@ parser.add_argument('--balance_loss_method', default='auto', type=str, help="bal
 # model parameters
 parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
 parser.add_argument("--resume_model",
-                    default="output/train_deepfake/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
+                    default="output/train_celeb-df-debug-model/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
                     type=str,
                     help="Path of resume model")
 
@@ -53,7 +53,7 @@ parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-parser.add_argument("--data_path", default='./datasets/half_body', type=str, help="path to inference file")
+parser.add_argument("--data_path", default='../_Datasets/adversary/ori-real', type=str, help="path to inference file")
 parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
 
 args = parser.parse_args()
@@ -86,8 +86,8 @@ class inference_model():
             {'params': self.net.parameters(), 'lr': self.args.lr, 'weight_decay': args.weight_decay, 'betas': (0.9, 0.999)},
             {'params': self.loss_function.balance_loss.parameters(), 'weight_decay': args.weight_decay}
             ])
-        max_iters = self.args.epoch * len(self.test_loader)
         # lr_scheduler aims to update 'optimizer.param_groups[n]['lr']' in optimizer
+        max_iters = self.args.epoch * len(self.test_loader)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda iter: 0.05 ** (iter / max_iters))
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=150)
         if self.args.resume_model:
