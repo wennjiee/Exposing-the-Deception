@@ -8,36 +8,36 @@ import numpy as np
 class loss_functions():
     def __init__(self, method='distance', mi_calculator='kl', temperature=1.5, bml_method='auto', scales=[1, 1, 1],
                  gil_loss=False,lil_loss=False,device='cuda:0'):
-        self.lil_loss=lil_loss
-        self.gil_loss=gil_loss
+        self.lil_loss = lil_loss
+        self.gil_loss = gil_loss
 
-        loss_num=1
+        loss_num = 1
         if gil_loss:
-            loss_num+=1
+            loss_num += 1
             logging.info("With Global Information Loss")
         if lil_loss:
-            loss_num+=1
+            loss_num += 1
             logging.info("With Local Information Loss")
         self.balance_loss = AutomaticWeightedLoss(loss_num)  # we have 3 losses
 
         self.softmax = torch.nn.Softmax(dim=1)
-        self.method=method
-        self.bml_method =bml_method
-        self.scales=scales
+        self.method = method
+        self.bml_method = bml_method
+        self.scales = scales
         print(f"Mutual Information Calculator is :{mi_calculator}")
         if mi_calculator == "kl":
             self.mi_calculator = torch.nn.KLDivLoss()
         elif mi_calculator == "w":
             self.mi_calculator = distance.SinkhornDistance(device=device).to(device)
-        self.temperature =temperature
+        self.temperature = temperature
     
-    def criterion(self,out_dict,y):
+    def criterion(self, out_dict, y):
 
-        return_losses=[]
+        return_losses = []
 
-        p_y_given_z=out_dict['p_y_given_z']
-        p_y_given_f1_f2_f3_f4=out_dict['p_y_given_f_all']
-        p_y_given_f1_fn_list=out_dict['p_y_given_f1_fn_list']
+        p_y_given_z = out_dict['p_y_given_z']
+        p_y_given_f1_f2_f3_f4 = out_dict['p_y_given_f_all']
+        p_y_given_f1_fn_list = out_dict['p_y_given_f1_fn_list']
 
         # CE loss 1. x_s = softmax()(x); 2. x_log = log(x_s); 3. NLLLoss(x_log, y) = CE loss
         loss_fn = nn.CrossEntropyLoss()
@@ -75,7 +75,7 @@ class loss_functions():
 
                 for out_v in p_y_given_f1_fn_list:
                     local_loss = local_loss + self.mi_calculator(p_y_given_f1_f2_f3_f4_soft.log(),
-                                                     self.softmax(out_v / self.temperature))
+                                                                 self.softmax(out_v / self.temperature))
                     ce_loss = ce_loss + loss_fn(out_v, y)
                 # ce_loss = ce_loss + 0.25 * loss_fn(p_y_given_f1_fn_list[i], y)
                 local_loss = torch.exp(-local_loss)
@@ -87,16 +87,14 @@ class loss_functions():
             return_losses.append(local_loss)
         return return_losses
     
-    def balance_mult_loss(self,losses):
+    def balance_mult_loss(self, losses):
         if self.bml_method == 'auto':
-            # Automatic Weighted Loss
-            loss = self.balance_loss(losses)
-
+            loss = self.balance_loss(losses) # Automatic Weighted Loss
         elif self.bml_method == 'hyper':
             # hyper-parameter
             loss = 0
             for i, l in enumerate(losses):
-                loss = loss+l*self.scales[i]
+                loss = loss + l * self.scales[i]
         else:
             loss = sum(losses)
         return loss
