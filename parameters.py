@@ -4,18 +4,18 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # general arguments
-    parser.add_argument("--name", default="deepfake_test", type=str, help="Specify name of the model")
+    parser.add_argument("--name", default="celeb-df-debug-model", type=str, help="Specify name of the model")
     parser.add_argument("--gpu_num", default="0", type=str, help="gpu number")
                         
 
     # arguments for train
-    parser.add_argument('--model', default="resnet34", type=str, help="choose backbone model")
-    parser.add_argument("--epoch", default=15, type=int, help="epoch of training")
+    parser.add_argument('--model', default="SFIConv", type=str, help="choose backbone model")
+    parser.add_argument("--epoch", default=5, type=int, help="epoch of training")
     parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
-    parser.add_argument("--bs", default=48, type=int, help="batch size of training")
-    parser.add_argument("--test_bs", default=48, type=int, help="batch size of training")
-    parser.add_argument("--num_workers", default=12, type=int, help="num workers")
+    parser.add_argument("--bs", default=16, type=int, help="batch size of training")
+    parser.add_argument("--test_bs", default=32, type=int, help="batch size of training")
+    parser.add_argument("--num_workers", default=0, type=int, help="num workers")
 
     # arguments for loss
     parser.add_argument("--lil_loss", default=True, type=bool, help="if local information loss")
@@ -41,10 +41,10 @@ def parse_args():
     
     # dataset
     parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-    parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt path")
+    parser.add_argument('--dataset', default="adv", type=str, help="dataset txt path")
     # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
     parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
     parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-    parser.add_argument("--extract_face", default=True, type=bool, help="whether to extract face from img")
+    parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
     return parser.parse_args()
 
