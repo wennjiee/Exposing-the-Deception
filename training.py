@@ -10,7 +10,7 @@ from tqdm import tqdm
 from losses.mi_loss import *
 from parameters import parse_args
 from dataset import ReadDataset, MyDataset, mixup_data, mixup_criterion
-from utils import plt_tensorboard,remove_prefix,create_table
+from utils import plt_tensorboard, remove_prefix, create_table
 from models.MI_Net import MI_Net
 from datetime import datetime
 import warnings
@@ -20,6 +20,7 @@ from scipy.special import softmax
 import random
 random.seed(2024)
 warnings.simplefilter("ignore", UserWarning)
+
 class train_and_test_model():
     def __init__(self,args):
         self.test_loss = []
@@ -35,15 +36,14 @@ class train_and_test_model():
         self.test_dataset = MyDataset(args, self.dataset.data['test'], self.dataset.labels['test'], size=args.size , test=True)
         self.best_epoch = -1
         self.device = torch.device("cuda", self.device_ids[0])
+        
         # must be shuffled due to calculation of auc 
         try:
-            self.train_loader = DataLoader(self.train_dataset, shuffle=True, batch_size=args.bs, num_workers=args.num_workers)
-                                           
+            self.train_loader = DataLoader(self.train_dataset, shuffle=True, batch_size=args.bs, num_workers=args.num_workers)                                   
         except:
             print("train_dataset is null")
         try:
-            self.val_loader = DataLoader(self.val_dataset, shuffle=False, batch_size=args.test_bs, num_workers=args.num_workers)
-                                      
+            self.val_loader = DataLoader(self.val_dataset, shuffle=False, batch_size=args.test_bs, num_workers=args.num_workers)                             
         except:
             print("val_dataset is null")
         self.test_loader = DataLoader(self.test_dataset, shuffle=False, batch_size=args.test_bs, num_workers=args.num_workers)
@@ -62,8 +62,8 @@ class train_and_test_model():
             {'params': self.net.parameters(), 'lr': self.args.lr, 'weight_decay': args.weight_decay, 'betas': (0.9, 0.999)},
             {'params': self.loss_function.balance_loss.parameters(), 'weight_decay': args.weight_decay}
             ])
-        max_iters = self.args.epoch * len(self.train_loader)
         # lr_scheduler aims to update 'optimizer.param_groups[n]['lr']' in optimizer
+        max_iters = self.args.epoch * len(self.train_loader)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda iter: 0.05 ** (iter / max_iters))
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=150)
         
@@ -139,7 +139,7 @@ class train_and_test_model():
             # loader_pbar = tqdm(loader, position=1)
             total_iterators = len(self.train_loader)
             pbar = tqdm(total = total_iterators)
-            for i, (data,y) in enumerate(self.train_loader):
+            for i, (data, y) in enumerate(self.train_loader):
                 
                 data = data.cuda(self.device)
                 y = y.type(torch.int64).cuda(self.device)
@@ -174,9 +174,9 @@ class train_and_test_model():
                 self.plt_tb.accumulate_metrics(out['p_y_given_z'], y, loss)
 
                 if i % 10 == 0:
-                    log_info=f"Training total loss: {np.mean(avg_loss)}, CE loss: {np.mean(avg_ce_loss)}, "
+                    log_info = f"Training total loss: {np.mean(avg_loss)}, CE loss: {np.mean(avg_ce_loss)}, "
                     if self.args.gil_loss:
-                        log_info+=f"global MI loss: {np.mean(avg_global_mi_loss)},"
+                        log_info += f"global MI loss: {np.mean(avg_global_mi_loss)},"
                     if self.args.lil_loss:
                         log_info += f"local MI loss: {np.mean(avg_local_loss)}"
                     logging.info(log_info)
@@ -186,7 +186,7 @@ class train_and_test_model():
                 pbar.update(1)
             
             pbar.close()
-            self.plt_tb.write_tensorboard(epoch, tb_writer=self.plt_tb.tb_writer, tb_prefix=f'Metrics in Training')                                                
+            # self.plt_tb.write_tensorboard(epoch, tb_writer=self.plt_tb.tb_writer, tb_prefix=f'Metrics in Training')                                                
             logging.info(f"Finish Epoch: {epoch} Training Average loss: {np.mean(avg_loss)}")
             
             self.test(self.net, epoch, val=False)
@@ -306,7 +306,6 @@ class train_and_test_model():
             self.save_model(epoch,metric,best=False)
             print('Saved Model!')
             return metric
-
 
 def unNormalize(tensor,mean,std):
     for t, m, s in zip(tensor, mean, std):
