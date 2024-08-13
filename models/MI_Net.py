@@ -5,6 +5,7 @@ from torch.nn import init
 from models.efficientnet import EfficientNet
 from models.mobilenet import MobileNetV1
 import logging
+from models.SFIConvResnet import SFIresnet26
 
 class MI_Net(nn.Module):
     def __init__(self, args, model='resnet34', num_regions=4, num_classes=2, freeze_fc=False, dropout=0.5)-> object:
@@ -26,6 +27,8 @@ class MI_Net(nn.Module):
                 layer = MobileNetV1()
             elif model == 'efficientnet':
                 layer = EfficientNet(pretrained=False)
+            elif model == 'SFIConv':
+                layer = SFIresnet26(pretrained=False)
             else:
                 logging.error("please choose the tpye of backbone in Local Information Block.")
             layer_name = 'region_model{}'.format(i + 1)
@@ -44,7 +47,7 @@ class MI_Net(nn.Module):
         self.bottleneck = ChannelCompress(in_ch=in_size*num_regions, out_ch=in_size)
         # self.global_model = ResNet_18()
 
-        self.baseline_linear = nn.Linear(in_size*num_regions, num_classes)  # *(num_regions+1)
+        self.baseline_linear = nn.Linear(in_size*num_regions, num_classes)  # *(num_regions + 1)
         self.linear = nn.Sequential(
             nn.Dropout(p=dropout),
             nn.Linear(in_size, num_classes)
