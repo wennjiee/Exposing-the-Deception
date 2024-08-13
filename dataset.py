@@ -15,6 +15,7 @@ from os import listdir
 from os.path import join
 import random
 from  RetinaFace.Retain_Face import Retain_Face
+
 class ReadDataset():
     """
         initialize once and can be reused as train/test/validation set
@@ -22,21 +23,20 @@ class ReadDataset():
 
     def __init__(self, args):
 
-        oversample=True
+        oversample = True
         self.data = {
             "train": [],
             "val":[],
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-
+        self.path = f'../_Datasets/{args.dataset}'
+        self.root = self.path
         # compression_version = ''
 
         # if 'FF++' in dataset_name:
         #     compression_version = dataset_name.split('_')[1]
         #     dataset_name=dataset_name.split('_')[0]
-
-        self.path=f'../_Datasets/{args.dataset}'
 
         # if oversample:
         #     if 'FF++' in dataset_name:
@@ -57,8 +57,7 @@ class ReadDataset():
         # else:
         #     self.read_txt(oversample=oversample,compression_version=compression_version)
         #     np.savez(dataset_path, data=self.data, labels=self.labels)
-        self.root = self.path
-
+        
         if 'Celeb' in args.dataset:
             self.init_celeb_df()
         elif 'cifar' in args.dataset:
@@ -67,11 +66,38 @@ class ReadDataset():
             self.init_waitan()
         elif 'deepfake' in args.dataset:
             self.init_deepfake_sets()
+        elif 'adv' in args.dataset:
+            self.init_adv_datasets()
         else:
             self.init_datasets()
             # self.read_txt(oversample=oversample)
-        logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train'])-sum(self.labels['train'])}")
+        logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train']) - sum(self.labels['train'])}")
     
+    def init_adv_datasets(self):
+        real_list = glob('../_Datasets/adversary/attack-real/*') + glob('../_Datasets/adversary/ori-real/*')
+        fake_list = glob('../_Datasets/adversary/attack-fake/*') + glob('../_Datasets/adversary/ori-fake/*')
+
+        random.shuffle(real_list)
+        random.shuffle(fake_list)
+        if len(real_list) <= len(fake_list):
+            fake_list = fake_list[0: len(real_list)]
+        else:
+            real_list = real_list[0: len(fake_list)]
+        real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
+        fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
+        
+        # train = 0.8 * all, val == test = 0.2 * all
+        ratio = 0.8
+        train_real_idx = int(ratio*len(real_list))
+        train_fake_idx = int(ratio*len(fake_list))
+        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx]
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] 
+        self.data['test'] = self.data['val']
+                                      
+        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx]
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]
+        self.labels['test'] = self.labels['val']
+
     def init_deepfake_sets(self):
         real_f_list = glob('./datasets/real/*')
         fake_f_list = glob('./datasets/fake/*')
@@ -363,7 +389,7 @@ class ReadDataset():
         fake_tgt = [1] * len(fake)
         return [*real, *fake], [*real_tgt, *fake_tgt]
 
-    def read_txt(self,oversample=False):
+    def read_txt(self, oversample=False):
 
         dataset_files=[os.path.join(self.path,'test_fake.txt'), os.path.join(self.path,'test_real.txt'),
                         os.path.join(self.path,'val_fake.txt'), os.path.join(self.path,'val_real.txt'),
@@ -434,6 +460,7 @@ class InferDataset():
         self.labels['val'] = unkown_list
         self.labels['test'] = unkown_list
         print('Inference data loaded')
+
 class MyDataset(Dataset):
 
     def __init__(self,
@@ -485,7 +512,7 @@ class MyDataset(Dataset):
             if not self.test:
                 data = self.aug(image=img)
                 img = data["image"]
-            img = img_to_tensor(img,self.normalize) # 3*H*W
+            img = img_to_tensor(img, self.normalize) # 3*H*W
             return img, self.label[idx] # 3*H_*W_=224
         else:
             img = self.data[idx]
@@ -498,6 +525,7 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
 # mixup_data(data, y, self.args.alpha)
 def mixup_data(x, y, alpha=0.5, use_cuda=False):
     '''Returns mixed inputs, pairs of targets, and lambda'''
@@ -519,7 +547,7 @@ def mixup_data(x, y, alpha=0.5, use_cuda=False):
 def mixup_criterion(criterion, pred, y_a, y_b, lam):
     a = criterion(pred, y_a)
     b = criterion(pred, y_b)
-    losses=[]
+    losses = []
     try:
         for i in range(len(a)):
             losses.append(lam * a[i]  + (1 - lam) * b[i])
