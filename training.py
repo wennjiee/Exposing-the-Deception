@@ -119,7 +119,7 @@ class train_and_test_model():
             {'params': self.net.parameters(), 'lr': self.args.lr, 'weight_decay': args.weight_decay, 'betas': (0.9, 0.999)},
             {'params': self.loss_function.balance_loss.parameters(), 'weight_decay': args.weight_decay}
         ])
-        # lr_scheduler更新optimizer的optimizer.param_groups[n]['lr']
+        # lr_scheduler updates optimizer's optimizer.param_groups[n]['lr']
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=150)
 
     def train(self):
