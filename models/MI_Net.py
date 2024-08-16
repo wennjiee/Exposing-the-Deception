@@ -11,7 +11,6 @@ class MI_Net(nn.Module):
     def __init__(self, args, model='resnet34', num_regions=4, num_classes=2, freeze_fc=False, dropout=0.5)-> object:
         super(MI_Net, self).__init__()
         
-        num_classes = 2 if 'cifar' not in args.dataset else 10
         self.num_regions = num_regions
         logging.info(f'Now has {num_regions} region models')
         
@@ -137,11 +136,7 @@ class ChannelCompress(nn.Module):
         return x
 
 def get_output_size(net, args):
-    _size = -1
-    if 'cifar' not in args.dataset:
-        _size = 224
-    else:
-        _size = 32
+    _size = args.size
     input = torch.randn(1, 3, _size, _size)
     # torch.Size([250, 3, 224, 224])
     output = net(input)
