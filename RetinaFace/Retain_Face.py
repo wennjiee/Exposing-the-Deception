@@ -50,7 +50,7 @@ class Retain_Face():
         # print('Finished loading model!')
         cudnn.benchmark = True
         self.device = torch.device("cpu" if self.args.cpu else "cuda")
-        # self.net = net.to(self.device)
+        self.net = net.to(self.device)
         self.device_ids = list(map(int, self.args.gpu_num.split(',')))
         if len(self.device_ids) > 1:
             self.net = nn.DataParallel(net, device_ids=self.device_ids)
