@@ -30,8 +30,8 @@ class ReadDataset():
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-        self.path = f'../_Datasets/{args.dataset}'
-        self.root = self.path
+        # self.path = f'../_Datasets/{args.dataset}'
+        # self.root = self.path
         # compression_version = ''
 
         # if 'FF++' in dataset_name:
@@ -58,7 +58,7 @@ class ReadDataset():
         #     self.read_txt(oversample=oversample,compression_version=compression_version)
         #     np.savez(dataset_path, data=self.data, labels=self.labels)
         
-        if 'Celeb' in args.dataset:
+        if 'celeb' in args.dataset:
             self.init_celeb_df()
         elif 'cifar' in args.dataset:
             self.init_cifar_10()
@@ -66,16 +66,52 @@ class ReadDataset():
             self.init_waitan()
         elif 'deepfake' in args.dataset:
             self.init_deepfake_sets()
-        elif 'adv' in args.dataset:
-            self.init_adv_datasets()
+        elif 'all' in args.dataset:
+            self.init_all_datasets()
         else:
             self.init_datasets()
             # self.read_txt(oversample=oversample)
-        logging.info(f"fake train data: {sum(self.labels['train'])}, real train data: {len(self.labels['train']) - sum(self.labels['train'])}")
+        logging.info(f"real train data: {sum(self.labels['train'])}, fake train data: {len(self.labels['train']) - sum(self.labels['train'])}")
     
-    def init_adv_datasets(self):
-        real_list = glob('../_Datasets/adversary/attack-real/*') + glob('../_Datasets/adversary/ori-real/*')
-        fake_list = glob('../_Datasets/adversary/attack-fake/*') + glob('../_Datasets/adversary/ori-fake/*')
+    def init_all_datasets(self):
+        real_fas_f = glob('/root/autodl-fs/fas/real/*')
+        fake_fas_f = glob('/root/autodl-fs/fas/fake/*')
+        
+        real_fas_list = []
+        for item in real_fas_f:
+            _list = glob(item + '/*')
+            real_fas_list.append(_list)
+        real_fas_list = [y for x in real_fas_list for y in x]
+        
+        fake_fas_list = []
+        for item in fake_fas_f:
+            _list = glob(item + '/*')
+            fake_fas_list.append(_list)
+        fake_fas_list = [y for x in fake_fas_list for y in x]
+        
+        real_adv_list = glob('/root/autodl-fs/adv-race-real/*') + glob('/root/autodl-fs/second_res/real-yellow-FFHQ-13061-3/*')
+        fake_adv_list = glob('/root/autodl-fs/adv-race-fake/*') + glob('/root/autodl-fs/second_res/fake-advgenerated_yellow-stylegan2-10000/*')
+
+        real_df_f = glob('./datasets/real/*')
+        fake_df_f = glob('./datasets/fake/*')
+        
+        real_df_list = []
+        for item in real_df_f:
+            _list = glob(item + '/*')
+            if 'wanghong' in item:
+                random.shuffle(_list)
+                _list = _list[0: 20000]
+            real_df_list.append(_list)
+        real_df_list = [y for x in real_df_list for y in x] # about 42906
+
+        fake_df_list = []
+        for item in fake_df_f:
+            _list = glob(item + '/*')
+            fake_df_list.append(_list)
+        fake_df_list = [y for x in fake_df_list for y in x] # about 53396
+
+        real_list = real_df_list + real_adv_list + real_fas_list
+        fake_list = fake_df_list + fake_adv_list + fake_fas_list
 
         random.shuffle(real_list)
         random.shuffle(fake_list)
@@ -86,18 +122,25 @@ class ReadDataset():
         real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
         fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
         
+        kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv = self.load_kaggle_datasets()
+        dfdc_train_data, dfdc_train_label, dfdc_val_data, dfdc_val_label = self.load_dfdc_datasets()
+        celeb_train_data, celeb_train_label, celeb_val_data, celeb_val_label = self.load_celeb_datasets()
         # train = 0.8 * all, val == test = 0.2 * all
         ratio = 0.8
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
-        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx]
-        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] 
+        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + \
+                             kaggle_train_data + dfdc_train_data + celeb_train_data              
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + kaggle_val_data + dfdc_val_data + celeb_val_data
         self.data['test'] = self.data['val']
                                       
-        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx]
-        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:]
+        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + \
+                               kaggle_train_label_inv + dfdc_train_label + celeb_train_label
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + kaggle_val_label_inv + dfdc_val_label + celeb_val_label
         self.labels['test'] = self.labels['val']
-
+        print(f"train_len = {len(self.data['train'])}")
+        print(f"test_len = {len(self.data['test'])}")
+        print(f"real train data: {sum(self.labels['train'])}, fake train data: {len(self.labels['train']) - sum(self.labels['train'])}")
     def init_deepfake_sets(self):
         real_f_list = glob('./datasets/real/*')
         fake_f_list = glob('./datasets/fake/*')
