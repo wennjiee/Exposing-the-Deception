@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gpu_num", default="0", type=str, help="gpu number")
                     
 # arguments for train or test
-parser.add_argument('--model', default="SFIConv", type=str, help="choose backbone model")
+parser.add_argument('--model', default="resnet34", type=str, help="choose backbone model")
 parser.add_argument("--epoch", default=20, type=int, help="epoch of training")
 parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay of training")
 parser.add_argument("--lr", default=1e-3, type=float, help="learning rate of training")
@@ -40,7 +40,7 @@ parser.add_argument('--balance_loss_method', default='auto', type=str, help="bal
 # model parameters
 parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
 parser.add_argument("--resume_model",
-                    default="output/train_celeb-df-debug-model/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
+                    default="output/train_all_df_adv_fas_withex/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
                     type=str,
                     help="Path of resume model")
 
@@ -49,11 +49,11 @@ parser.add_argument("--test", default=True, type=bool,help="Test or not")
 
 # dataset
 parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-parser.add_argument('--dataset', default="deepfake", type=str, help="dataset txt path")
+parser.add_argument('--dataset', default="all", type=str, help="dataset txt path")
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-parser.add_argument("--data_path", default='../_Datasets/adversary/ori-real', type=str, help="path to inference file")
+parser.add_argument("--data_path", default='/root/autodl-fs/fas/fake/npu_fake_data', type=str, help="path to inference file")
 parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
 
 args = parser.parse_args()
