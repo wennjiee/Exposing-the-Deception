@@ -53,8 +53,8 @@ parser.add_argument('--dataset', default="all", type=str, help="dataset txt path
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
-parser.add_argument("--data_path", default='/root/autodl-fs/fas/fake/npu_fake_data', type=str, help="path to inference file")
-parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
+parser.add_argument("--data_path", default='./datasets/real/real-race-processed-9845', type=str, help="path to inference file") # /root/autodl-fs/adv-race-real
+parser.add_argument("--extract_face", default=True, type=bool, help="whether to extract face from img")
 
 args = parser.parse_args()
 
