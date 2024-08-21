@@ -40,7 +40,7 @@ parser.add_argument('--balance_loss_method', default='auto', type=str, help="bal
 # model parameters
 parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
 parser.add_argument("--resume_model",
-                    default="output/train_all_df_adv_fas_withex/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
+                    default="output/train_waitan/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
                     type=str,
                     help="Path of resume model")
 
@@ -49,17 +49,17 @@ parser.add_argument("--test", default=True, type=bool,help="Test or not")
 
 # dataset
 parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-parser.add_argument('--dataset', default="all", type=str, help="dataset txt path")
+parser.add_argument('--dataset', default="waitan", type=str, help="dataset txt path")
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
 parser.add_argument("--data_path", default='./datasets/real/real-race-processed-9845', type=str, help="path to inference file") # /root/autodl-fs/adv-race-real
-parser.add_argument("--extract_face", default=True, type=bool, help="whether to extract face from img")
+parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
 
 args = parser.parse_args()
 
 class inference_model():
-    def __init__(self,args):
+    def __init__(self, args):
         self.infer_results = []
         self.infer_prob = []
         self.best_AUC =  0
@@ -140,16 +140,26 @@ class inference_model():
             test_auc = roc_auc_score(label_list, _infer_prob)
             print(f'Tested ACC is: {test_acc}')
             print(f'Test AUC is: {test_auc}')
-        lines = []
-        for idx in range(len(test_path)):
-            line = []
-            line.append(test_path[idx])
-            if label_list[idx] != 'unk':
-                line.append('label=' + str(label_list[idx]))
-            line.append(str(pred_list[idx]))
-            lines.append(line)
-        postfix = args.data_path.split('/')[-1]
-        write_csv(f'./results18_{postfix}.csv', lines)
+        if 'waitan' in self.args.dataset:
+            lines = [['img_name', 'y_pred']]
+            _infer_prob = np.concatenate(self.infer_prob)
+            for idx in range(len(test_path)):
+                line = []
+                line.append(test_path[idx].split('/')[-1])
+                line.append(str(_infer_prob[idx]))
+                lines.append(line)
+            write_csv(f'./results_waitan.csv', lines)
+        else:
+            lines = []
+            for idx in range(len(test_path)):
+                line = []
+                line.append(test_path[idx])
+                if label_list[idx] != 'unk':
+                    line.append('label=' + str(label_list[idx]))
+                line.append(str(pred_list[idx]))
+                lines.append(line)
+            postfix = args.data_path.split('/')[-1]
+            write_csv(f'./results18_{postfix}.csv', lines)
         print('Finished Inference')
 
 if __name__ == "__main__":
