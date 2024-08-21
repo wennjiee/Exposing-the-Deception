@@ -74,6 +74,8 @@ class ReadDataset():
         logging.info(f"real train data: {sum(self.labels['train'])}, fake train data: {len(self.labels['train']) - sum(self.labels['train'])}")
     
     def init_all_datasets(self):
+        
+        # load fas datasets
         real_fas_f = glob('/root/autodl-fs/fas/real/*')
         fake_fas_f = glob('/root/autodl-fs/fas/fake/*')
         
@@ -82,16 +84,22 @@ class ReadDataset():
             _list = glob(item + '/*')
             real_fas_list.append(_list)
         real_fas_list = [y for x in real_fas_list for y in x]
-        
+        fas_siw_real = glob('/autodl-fs/data/fas/SIW/Test/real/*') + glob('/autodl-fs/data/fas/SIW/Train/real/*')
+        real_fas_list += fas_siw_real
+
         fake_fas_list = []
         for item in fake_fas_f:
             _list = glob(item + '/*')
             fake_fas_list.append(_list)
         fake_fas_list = [y for x in fake_fas_list for y in x]
+        fas_siw_fake = glob('/autodl-fs/data/fas/SIW/Test/fake/*') + glob('/autodl-fs/data/fas/SIW/Train/fake/*')
+        fake_fas_list += fas_siw_fake
         
+        # load adv datasets
         real_adv_list = glob('/root/autodl-fs/adv-race-real/*') + glob('/root/autodl-fs/second_res/real-yellow-FFHQ-13061-3/*')
         fake_adv_list = glob('/root/autodl-fs/adv-race-fake/*') + glob('/root/autodl-fs/second_res/fake-advgenerated_yellow-stylegan2-10000/*')
 
+        # load deepfake datasets
         real_df_f = glob('./datasets/real/*')
         fake_df_f = glob('./datasets/fake/*')
         
@@ -110,6 +118,7 @@ class ReadDataset():
             fake_df_list.append(_list)
         fake_df_list = [y for x in fake_df_list for y in x] # about 53396
 
+        # add and split datastes
         real_list = real_df_list + real_adv_list + real_fas_list
         fake_list = fake_df_list + fake_adv_list + fake_fas_list
 
@@ -125,22 +134,26 @@ class ReadDataset():
         kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv = self.load_kaggle_datasets()
         dfdc_train_data, dfdc_train_label, dfdc_val_data, dfdc_val_label = self.load_dfdc_datasets()
         celeb_train_data, celeb_train_label, celeb_val_data, celeb_val_label = self.load_celeb_datasets()
+        ff_train_data, ff_train_label, ff_val_data, ff_val_label = self.load_ff_datasets()
         # train = 0.8 * all, val == test = 0.2 * all
-        ratio = 0.8
+        ratio = 0.85
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
         self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + \
-                             kaggle_train_data + dfdc_train_data + celeb_train_data              
-        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + kaggle_val_data + dfdc_val_data + celeb_val_data
+                             kaggle_train_data + dfdc_train_data + celeb_train_data + ff_train_data              
+        self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + \
+                           kaggle_val_data + dfdc_val_data + celeb_val_data + ff_val_data
         self.data['test'] = self.data['val']
                                       
         self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + \
-                               kaggle_train_label_inv + dfdc_train_label + celeb_train_label
-        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + kaggle_val_label_inv + dfdc_val_label + celeb_val_label
+                               kaggle_train_label_inv + dfdc_train_label + celeb_train_label + ff_train_label
+        self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + \
+                             kaggle_val_label_inv + dfdc_val_label + celeb_val_label + ff_val_label
         self.labels['test'] = self.labels['val']
         print(f"train_len = {len(self.data['train'])}")
         print(f"test_len = {len(self.data['test'])}")
         print(f"real train data: {sum(self.labels['train'])}, fake train data: {len(self.labels['train']) - sum(self.labels['train'])}")
+    
     def init_deepfake_sets(self):
         real_f_list = glob('./datasets/real/*')
         fake_f_list = glob('./datasets/fake/*')
@@ -218,8 +231,8 @@ class ReadDataset():
                 else:
                     kaggle_train_real_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
                     kaggle_train_real_label.append(0)
-        kaggle_train_data = kaggle_train_real_data[0: 6000] + kaggle_train_fake_data[0: 6000]
-        kaggle_train_label = kaggle_train_real_label[0: 6000] + kaggle_train_fake_label[0: 6000]
+        kaggle_train_data = kaggle_train_real_data[0: 60000] + kaggle_train_fake_data[0: 100000]
+        kaggle_train_label = kaggle_train_real_label[0: 60000] + kaggle_train_fake_label[0: 100000]
         kaggle_train_label_inv = [1 if item == 0 else 0 for item in kaggle_train_label]
         with open("./datasets/waitan24/phase1/valset_label.txt", "r") as f:
             lines = f.readlines()
@@ -229,8 +242,8 @@ class ReadDataset():
                 line = line.strip('\n').split(',')
                 kaggle_val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
                 kaggle_val_label.append(int(line[1]))
-        kaggle_val_data = kaggle_val_data[0: 4000]
-        kaggle_val_label = kaggle_val_label[0: 4000]
+        kaggle_val_data = kaggle_val_data[0: 20000]
+        kaggle_val_label = kaggle_val_label[0: 20000]
         kaggle_val_label_inv = [1 if item == 0 else 0 for item in kaggle_val_label]
         return kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv
     
@@ -299,12 +312,19 @@ class ReadDataset():
                 line = line.strip('\n').split(',')
                 val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
                 val_label.append(int(line[1]))
+        with open("./datasets/waitan24/phase2/testset1_seen_nolabel.txt", "r") as f:
+            lines = f.readlines()
+            test_data = []
+            for line in lines[1:]:
+                line = line.strip('\n').split(',')
+                test_data.append('./datasets/waitan24/phase2/testset1_seen/' + line[0])
         self.data['train'] = train_data
         self.labels['train'] = train_label
         self.data['val'] = val_data
         self.labels['val'] = val_label
-        self.data['test'] = self.data['val']
-        self.labels['test'] = self.labels['val']
+        self.data['test'] = test_data
+        self.labels['test'] = ['unk'] * len(test_data)
+        return self.data, self.labels
 
     def init_datasets(self):
 
@@ -494,14 +514,18 @@ class InferDataset():
             "test": [],
         }
         self.labels = copy.deepcopy(self.data)
-        img_list = glob(args.data_path + '/*')
-        self.data['train'] = img_list
-        self.data['val'] = img_list
-        self.data['test'] = img_list
-        unkown_list = ['unk'] * len(img_list)
-        self.labels['train'] = unkown_list
-        self.labels['val'] = unkown_list
-        self.labels['test'] = unkown_list
+        if 'waitan' in args.dataset:
+            tmp = ReadDataset(args)
+            self.data, self.labels = tmp.init_waitan()
+        else:
+            img_list = glob(args.data_path + '/*')
+            self.data['train'] = img_list
+            self.data['val'] = img_list
+            self.data['test'] = img_list
+            unkown_list = ['unk'] * len(img_list)
+            self.labels['train'] = unkown_list
+            self.labels['val'] = unkown_list
+            self.labels['test'] = unkown_list
         print('Inference data loaded')
 
 class MyDataset(Dataset):
