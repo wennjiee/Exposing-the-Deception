@@ -40,7 +40,7 @@ parser.add_argument('--balance_loss_method', default='auto', type=str, help="bal
 # model parameters
 parser.add_argument("--num_LIBs", default=4, type=int, help="the number of Local Information Block")
 parser.add_argument("--resume_model",
-                    default="output/train_waitan/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
+                    default="output/train_all_df_adv_fas_withex_pro_final/model_best.pth", # output/train_celeb_df_v2/model_epoch_9.pth
                     type=str,
                     help="Path of resume model")
 
@@ -49,12 +49,12 @@ parser.add_argument("--test", default=True, type=bool,help="Test or not")
 
 # dataset
 parser.add_argument("--size", default=224, type=int, help="Specify the size of the input image, applied to width and height")
-parser.add_argument('--dataset', default="waitan", type=str, help="dataset txt path")
+parser.add_argument('--dataset', default="all", type=str, help="dataset txt path")
 # 'Face2Face','Deepfakes','FaceSwap','NeuralTextures', Celeb-DF-v2, DFDC-Preview, DFDC, FF++_c23, DeeperForensics-1.0, cifar-10-batches-py
 parser.add_argument("--mixup", default=True, type=bool, help="mix up or not")
 parser.add_argument("--alpha", default=0.5, type=float, help="mix up alpha")
 parser.add_argument("--data_path", default='./datasets/real/real-race-processed-9845', type=str, help="path to inference file") # /root/autodl-fs/adv-race-real
-parser.add_argument("--extract_face", default=False, type=bool, help="whether to extract face from img")
+parser.add_argument("--extract_face", default=True, type=bool, help="whether to extract face from img")
 
 args = parser.parse_args()
 
@@ -70,7 +70,7 @@ class inference_model():
         self.device_ids = list(map(int, args.gpu_num.split(',')))
         self.dataset = InferDataset(args)
         self.test_dataset = MyDataset(args, self.dataset.data['test'], self.dataset.labels['test'], size=args.size , test=True)
-        self.device = torch.device("cuda", self.device_ids[0])
+        self.device = torch.device("cuda", self.device_ids[0]) # torch.device("cuda", self.device_ids[0])
         self.test_loader = DataLoader(self.test_dataset, shuffle=False, batch_size=args.test_bs, num_workers=args.num_workers)              
         self.loss_function = loss_functions(method='mi',
                                             mi_calculator=self.args.mi_calculator, temperature=self.args.temperature,

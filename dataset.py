@@ -124,10 +124,10 @@ class ReadDataset():
 
         random.shuffle(real_list)
         random.shuffle(fake_list)
-        if len(real_list) <= len(fake_list):
-            fake_list = fake_list[0: len(real_list)]
-        else:
-            real_list = real_list[0: len(fake_list)]
+        # if len(real_list) <= len(fake_list):
+        #     fake_list = fake_list[0: len(real_list)]
+        # else:
+        #     real_list = real_list[0: len(fake_list)]
         real_tgt_list = [1] * len(real_list) # !!! important real label = 1 in our race
         fake_tgt_list = [0] * len(fake_list) # !!! important fake label = 0 in our race
         
@@ -139,17 +139,29 @@ class ReadDataset():
         ratio = 0.85
         train_real_idx = int(ratio*len(real_list))
         train_fake_idx = int(ratio*len(fake_list))
-        self.data['train'] = real_list[0: train_real_idx] + fake_list[0: train_fake_idx] + \
+        self.data['train'] = real_list[0: ] + fake_list[0: ] + \
                              kaggle_train_data + dfdc_train_data + celeb_train_data + ff_train_data              
         self.data['val'] = real_list[train_real_idx:] + fake_list[train_fake_idx:] + \
                            kaggle_val_data + dfdc_val_data + celeb_val_data + ff_val_data
         self.data['test'] = self.data['val']
                                       
-        self.labels['train'] = real_tgt_list[0: train_real_idx] + fake_tgt_list[0: train_fake_idx] + \
+        self.labels['train'] = real_tgt_list[0: ] + fake_tgt_list[0: ] + \
                                kaggle_train_label_inv + dfdc_train_label + celeb_train_label + ff_train_label
         self.labels['val'] = real_tgt_list[train_real_idx:] + fake_tgt_list[train_fake_idx:] + \
                              kaggle_val_label_inv + dfdc_val_label + celeb_val_label + ff_val_label
         self.labels['test'] = self.labels['val']
+        # error_img = []
+        # from tqdm import tqdm
+        # for path in tqdm(real_fas_list + fake_fas_list):
+        #     try:
+        #         img = cv2.imread(path, cv2.IMREAD_COLOR)
+        #         elem_size = img.shape
+        #         im_size_min = np.min(elem_size[0:2])
+        #         im_size_max = np.max(elem_size[0:2])
+        #         if 0 in elem_size:
+        #             error_img.append(path)
+        #     except:
+        #         error_img.append(path)
         print(f"train_len = {len(self.data['train'])}")
         print(f"test_len = {len(self.data['test'])}")
         print(f"real train data: {sum(self.labels['train'])}, fake train data: {len(self.labels['train']) - sum(self.labels['train'])}")
@@ -231,8 +243,8 @@ class ReadDataset():
                 else:
                     kaggle_train_real_data.append('./datasets/waitan24/phase1/trainset/' + line[0])
                     kaggle_train_real_label.append(0)
-        kaggle_train_data = kaggle_train_real_data[0: 60000] + kaggle_train_fake_data[0: 100000]
-        kaggle_train_label = kaggle_train_real_label[0: 60000] + kaggle_train_fake_label[0: 100000]
+        kaggle_train_data = kaggle_train_real_data[0: 6000] + kaggle_train_fake_data[0: 12000]
+        kaggle_train_label = kaggle_train_real_label[0: 6000] + kaggle_train_fake_label[0: 12000]
         kaggle_train_label_inv = [1 if item == 0 else 0 for item in kaggle_train_label]
         with open("./datasets/waitan24/phase1/valset_label.txt", "r") as f:
             lines = f.readlines()
@@ -242,8 +254,8 @@ class ReadDataset():
                 line = line.strip('\n').split(',')
                 kaggle_val_data.append('./datasets/waitan24/phase1/valset/' + line[0])
                 kaggle_val_label.append(int(line[1]))
-        kaggle_val_data = kaggle_val_data[0: 20000]
-        kaggle_val_label = kaggle_val_label[0: 20000]
+        kaggle_val_data = kaggle_val_data[0: 4000]
+        kaggle_val_label = kaggle_val_label[0: 4000]
         kaggle_val_label_inv = [1 if item == 0 else 0 for item in kaggle_val_label]
         return kaggle_train_data, kaggle_train_label_inv, kaggle_val_data, kaggle_val_label_inv
     
@@ -568,27 +580,30 @@ class MyDataset(Dataset):
         return Resize(p=1, height=self.size, width=self.size)
     
     def __getitem__(self, idx):
-        if 'cifar' not in self.args.dataset:
-            # img = Image.open(self.data[idx])
-            img = cv2.imread(self.data[idx], cv2.IMREAD_COLOR) # HxWx3
-            if self.args.extract_face:
-                with torch.no_grad():
-                    img = self.retainFace.generateBooxImg(img)
-            data = self.transform(image=img) # H*W*3
-            img = data["image"]
-            if not self.test:
-                data = self.aug(image=img)
+        try:
+            if 'cifar' not in self.args.dataset:
+                # img = Image.open(self.data[idx])
+                img = cv2.imread(self.data[idx], cv2.IMREAD_COLOR) # HxWx3
+                if self.args.extract_face:
+                    with torch.no_grad():
+                        img = self.retainFace.generateBooxImg(img)
+                data = self.transform(image=img) # H*W*3
                 img = data["image"]
-            img = img_to_tensor(img, self.normalize) # 3*H*W
-            return img, self.label[idx] # 3*H_*W_=224
-        else:
-            img = self.data[idx]
-            # if not self.test:
-            #     data = cifar_transform_train(image=img)
-            #     img = data["image"]
-            # img = cifar_transform_train(Image.fromarray(img))
-            # img = img_to_tensor(img, self.normalize) # 3*H*W
-            return img, self.label[idx] # 3*H_*W_=224
+                if not self.test:
+                    data = self.aug(image=img)
+                    img = data["image"]
+                img = img_to_tensor(img, self.normalize) # 3*H*W
+                return img, self.label[idx] # 3*H_*W_=224
+            else:
+                img = self.data[idx]
+                # if not self.test:
+                #     data = cifar_transform_train(image=img)
+                #     img = data["image"]
+                # img = cifar_transform_train(Image.fromarray(img))
+                # img = img_to_tensor(img, self.normalize) # 3*H*W
+                return img, self.label[idx] # 3*H_*W_=224
+        except:
+            print(self.data[idx])
 
     def __len__(self):
         return len(self.data)
